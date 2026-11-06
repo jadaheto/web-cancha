@@ -22,7 +22,7 @@ import { LogoComponent } from '../../ui/atoms/logo.component';
 
       <section class="cs-auth-form form">
         <div class="form-inner">
-          <cs-logo variant="horizontal-color" [height]="44"></cs-logo>
+          <cs-logo variant="color" [height]="72"></cs-logo>
           <h1>Iniciar sesión</h1>
           <p class="text-muted">Ingresa con tu usuario administrador.</p>
 

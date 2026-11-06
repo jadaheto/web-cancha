@@ -35,7 +35,7 @@ h1 { margin: 1.2rem 0 .3rem; font-size: clamp(1.6rem, 4vw, 2.2rem); }
 /* ---- Reserva ---- */
 .booking {
   min-width: 0; background: #fff; border-radius: 22px; padding: 1.4rem; box-shadow: 0 6px 24px rgba(15, 52, 97, .1);
-  position: sticky; top: 80px;
+  position: sticky; top: 88px;
 }
 .booking h2 { margin: 0 0 1rem; font-size: 1.2rem; }
 .days { display: flex; gap: .45rem; overflow-x: auto; padding-bottom: .5rem; scroll-snap-type: x mandatory; }

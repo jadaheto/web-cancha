@@ -13,7 +13,7 @@ interface NavItem { label: string; icon: string; route: string; }
   template: `
     <aside class="cs-sidebar">
       <div class="brand">
-        <cs-logo variant="horizontal-white" [height]="28"></cs-logo>
+        <cs-logo variant="white" [height]="64"></cs-logo>
       </div>
       <nav>
         <a *ngFor="let item of items"

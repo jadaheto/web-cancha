@@ -4,8 +4,9 @@ import { Component, Input } from '@angular/core';
 type LogoVariant = 'color' | 'white' | 'horizontal-color' | 'horizontal-white' | 'isotipo-color' | 'isotipo-white';
 
 const FILES: Record<LogoVariant, string> = {
-  color: 'comfasucre-logo-color.png',
-  white: 'comfasucre-logo-white-isocolor.png',
+  // Logo vertical oficial: isotipo arriba y "Comfasucre de todos" debajo.
+  color: 'comfasucre-logo-color-sm.png',
+  white: 'comfasucre-logo-white-isocolor-sm.png',
   'horizontal-color': 'comfasucre-logo-horizontal-color-sm.png',
   'horizontal-white': 'comfasucre-logo-horizontal-white-sm.png',
   'isotipo-color': 'comfasucre-isotipo-color.png',

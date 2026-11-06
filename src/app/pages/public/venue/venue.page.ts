@@ -103,7 +103,7 @@ import { MediaUrlPipe } from '../../../ui/pipes/media-url.pipe';
       padding: .45rem 1rem; border-radius: 999px; font: inherit; font-size: .88rem; cursor: pointer; white-space: nowrap;
     }
     .sport-tabs button.on { background: var(--cs-navy,#19559b); border-color: var(--cs-navy,#19559b); color: #fff; }
-    aside { display: flex; flex-direction: column; gap: 1rem; position: sticky; top: 80px; }
+    aside { display: flex; flex-direction: column; gap: 1rem; position: sticky; top: 88px; }
     .box { background: #fff; border-radius: 18px; padding: 1.2rem; box-shadow: 0 3px 15px rgba(15,52,97,.07); }
     .box h3 { margin: 0 0 .8rem; font-size: 1rem; }
     .info { list-style: none; padding: 0; margin: 0 0 1rem; display: flex; flex-direction: column; gap: .6rem; font-size: .9rem; }

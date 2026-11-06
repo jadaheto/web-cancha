@@ -12,7 +12,7 @@ import { LogoComponent } from '../atoms/logo.component';
   template: `
     <header class="pnav">
       <div class="container-app pnav-inner">
-        <a routerLink="/" class="brand" aria-label="Inicio"><cs-logo variant="horizontal-color" [height]="38"></cs-logo></a>
+        <a routerLink="/" class="brand" aria-label="Inicio"><cs-logo variant="color" [height]="50"></cs-logo></a>
         <nav class="links">
           <a routerLink="/" routerLinkActive="on" [routerLinkActiveOptions]="{ exact: true }"><i class="bi bi-house"></i><span>Inicio</span></a>
           <a routerLink="/" fragment="sedes"><i class="bi bi-building"></i><span>Sedes</span></a>
@@ -29,7 +29,7 @@ import { LogoComponent } from '../atoms/logo.component';
     <footer class="pfoot">
       <div class="container-app pfoot-inner">
         <div>
-          <cs-logo variant="horizontal-white" [height]="34"></cs-logo>
+          <cs-logo variant="white" [height]="64"></cs-logo>
           <p class="muted">{{ store.brand()?.tagline || 'Reserva canchas y espacios deportivos de la Caja.' }}</p>
         </div>
         <div class="contact" *ngIf="store.brand() as b">
@@ -50,7 +50,7 @@ import { LogoComponent } from '../atoms/logo.component';
     :host { display: flex; flex-direction: column; min-height: 100vh; background: var(--cs-gray-50, #f8f9fb); }
     main { flex: 1; }
     .pnav { background: #fff; position: sticky; top: 0; z-index: 50; box-shadow: 0 2px 12px rgba(15,52,97,.07); }
-    .pnav-inner { display: flex; align-items: center; justify-content: space-between; height: 64px; gap: 1rem; }
+    .pnav-inner { display: flex; align-items: center; justify-content: space-between; height: 72px; gap: 1rem; }
     .links { display: flex; gap: .25rem; align-items: center; }
     .links a {
       display: inline-flex; align-items: center; gap: .4rem; padding: .5rem .8rem; border-radius: 999px;
