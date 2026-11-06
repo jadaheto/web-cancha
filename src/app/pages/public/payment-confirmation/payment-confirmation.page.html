@@ -1,0 +1,100 @@
+<div class="container-app wrap">
+  <cs-spinner *ngIf="loading()"></cs-spinner>
+
+  <div class="card center" *ngIf="notFound()">
+    <i class="bi bi-question-circle big muted"></i>
+    <h1>No encontramos tu reserva</h1>
+    <p class="text-muted">Verifica el enlace o comunícate con nosotros.</p>
+    <a routerLink="/" class="cs-btn cs-btn-primary">Ir al inicio</a>
+  </div>
+
+  <ng-container *ngIf="reservation() as r">
+    <!-- Encabezado con el resultado general -->
+    <header class="hero" [ngClass]="overall()">
+      <ng-container [ngSwitch]="overall()">
+        <ng-container *ngSwitchCase="'ok'">
+          <i class="bi bi-patch-check-fill"></i>
+          <div><h1>¡Pago confirmado!</h1><p>Tu reserva {{ number() }} quedó confirmada. Te enviamos el detalle por WhatsApp.</p></div>
+        </ng-container>
+        <ng-container *ngSwitchCase="'wait'">
+          <cs-spinner></cs-spinner>
+          <div><h1>Estamos confirmando tu pago</h1><p>Esto puede tardar unos segundos. No cierres esta página.</p></div>
+        </ng-container>
+        <ng-container *ngSwitchCase="'fail'">
+          <i class="bi bi-exclamation-octagon-fill"></i>
+          <div>
+            <h1>{{ r.status === 'cancelled' ? 'Reserva cancelada' : 'No pudimos confirmar el pago' }}</h1>
+            <p *ngIf="r.status !== 'cancelled'">Si el dinero fue descontado, comunícate con nosotros con el número de reserva {{ number() }}.</p>
+          </div>
+        </ng-container>
+      </ng-container>
+    </header>
+
+    <!-- Doble confirmación -->
+    <div class="steps">
+      <!-- 1. ePayco -->
+      <section class="step" [ngClass]="epaycoStep()">
+        <div class="step-head">
+          <span class="num">1</span>
+          <div>
+            <h2>{{ isCash() ? 'Pago en caja' : 'Confirmación de ePayco' }}</h2>
+            <small>{{ isCash() ? 'Registrado por Comfasucre' : 'Pasarela de pagos' }}</small>
+          </div>
+          <span class="state" [ngSwitch]="epaycoStep()">
+            <ng-container *ngSwitchCase="'ok'"><i class="bi bi-check-circle-fill"></i> Aprobado</ng-container>
+            <ng-container *ngSwitchCase="'wait'"><i class="bi bi-hourglass-split"></i> Pendiente</ng-container>
+            <ng-container *ngSwitchCase="'fail'"><i class="bi bi-x-circle-fill"></i> No aprobado</ng-container>
+            <ng-container *ngSwitchCase="'na'"><i class="bi bi-dash-circle"></i> Sin costo</ng-container>
+          </span>
+        </div>
+        <dl *ngIf="!isFree()">
+          <ng-container *ngIf="!isCash(); else cash">
+            <div><dt>Respuesta</dt><dd>{{ gateway()?.responseMessage || (epaycoStep() === 'ok' ? 'Aceptada' : 'En proceso') }}</dd></div>
+            <div><dt>Referencia ePayco</dt><dd>{{ gateway()?.refPayco || (r.paymentStatus === 'paid' ? r.paymentReference : null) || '—' }}</dd></div>
+            <div *ngIf="gateway()?.franchise"><dt>Medio de pago</dt><dd>{{ gateway()?.franchise }}</dd></div>
+            <div><dt>Valor</dt><dd>{{ (gateway()?.amount ?? r.totalAmount) | currency:'COP':'symbol-narrow':'1.0-0' }}</dd></div>
+            <div *ngIf="gateway()?.transactionDate"><dt>Fecha</dt><dd>{{ gateway()?.transactionDate }}</dd></div>
+          </ng-container>
+          <ng-template #cash>
+            <div><dt>Recibo de caja</dt><dd>{{ r.paymentReference || '—' }}</dd></div>
+            <div><dt>Valor</dt><dd>{{ r.totalAmount | currency:'COP':'symbol-narrow':'1.0-0' }}</dd></div>
+          </ng-template>
+        </dl>
+        <p class="tag test" *ngIf="gateway()?.testRequest"><i class="bi bi-cone-striped"></i> Transacción de PRUEBA (sin cobro real)</p>
+      </section>
+
+      <!-- 2. Comfasucre -->
+      <section class="step" [ngClass]="ourStep()">
+        <div class="step-head">
+          <span class="num">2</span>
+          <div><h2>Confirmación de Comfasucre</h2><small>Recepción del pago y reserva</small></div>
+          <span class="state" [ngSwitch]="ourStep()">
+            <ng-container *ngSwitchCase="'ok'"><i class="bi bi-check-circle-fill"></i> Recibido</ng-container>
+            <ng-container *ngSwitchCase="'wait'"><i class="bi bi-hourglass-split"></i> Verificando</ng-container>
+            <ng-container *ngSwitchCase="'fail'"><i class="bi bi-x-circle-fill"></i> Sin confirmar</ng-container>
+          </span>
+        </div>
+        <dl>
+          <div><dt>N.º de reserva</dt><dd>{{ number() }}</dd></div>
+          <div><dt>Zona</dt><dd>{{ r.courtName }}</dd></div>
+          <div><dt>Fecha</dt><dd class="cap">{{ r.startTime | date:'EEEE d \'de\' MMMM y':'America/Bogota':'es-CO' }}</dd></div>
+          <div><dt>Horario</dt><dd>{{ r.startTime | date:'HH:mm':'America/Bogota' }} – {{ r.endTime | date:'HH:mm':'America/Bogota' }}</dd></div>
+          <div><dt>A nombre de</dt><dd>{{ r.userName }}</dd></div>
+          <div *ngIf="r.paidAt"><dt>Pago recibido</dt><dd>{{ r.paidAt | date:'d MMM y, h:mm a':'America/Bogota':'es-CO' }}</dd></div>
+          <div class="total"><dt>Total</dt><dd>{{ r.totalAmount | currency:'COP':'symbol-narrow':'1.0-0' }}</dd></div>
+        </dl>
+      </section>
+    </div>
+
+    <p class="checked" *ngIf="checkedAt() as t">Última verificación: {{ t | date:'h:mm:ss a' }}</p>
+    <div *ngIf="error()" class="cs-alert cs-alert-danger">{{ error() }}</div>
+
+    <div class="actions">
+      <cs-button *ngIf="overall() === 'fail' && r.status !== 'cancelled' && !isCash() && r.paymentStatus !== 'paid'"
+                 icon="credit-card" [loading]="paying()" (clicked)="retryPayment()">Intentar pagar de nuevo</cs-button>
+      <cs-button *ngIf="overall() === 'ok'" variant="outline" icon="printer" (clicked)="print()">Imprimir comprobante</cs-button>
+      <a [routerLink]="['/cancha', r.courtId]" class="cs-btn cs-btn-ghost">Reservar otro horario</a>
+      <a routerLink="/" class="cs-btn cs-btn-ghost">Ir al inicio</a>
+    </div>
+  </ng-container>
+</div>

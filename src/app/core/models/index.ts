@@ -163,3 +163,19 @@ export interface MonthlyPoint { month: string; revenue: number; count: number; }
 export interface TopCourt {
   id: string; name: string; sportType: string; reservationCount: number; revenue: number;
 }
+
+/** Resultado del pago según ePayco (consultado por el backend en la pasarela). */
+export interface GatewayResult {
+  status: 'pending' | 'approved' | 'rejected';
+  refPayco: string | null;
+  responseMessage: string | null;
+  franchise: string | null;
+  amount: number | null;
+  transactionDate: string | null;
+  testRequest: boolean | null;
+}
+
+export interface PaymentConfirmation {
+  reservation: Reservation;
+  gateway: GatewayResult | null;
+}

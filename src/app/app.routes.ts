@@ -14,8 +14,12 @@ export const routes: Routes = [
       { path: '', loadComponent: () => import('./pages/public/home/home.page').then((m) => m.HomePage) },
       { path: 'sede/:slug', loadComponent: () => import('./pages/public/venue/venue.page').then((m) => m.VenuePage) },
       { path: 'cancha/:id', loadComponent: () => import('./pages/public/court/court.page').then((m) => m.CourtPage) },
-      { path: 'reserva', loadComponent: () => import('./pages/public/reservation/reservation.page').then((m) => m.ReservationPage) },
-      { path: 'reserva/:id', loadComponent: () => import('./pages/public/reservation/reservation.page').then((m) => m.ReservationPage) },
+      // Página de confirmación de pago (URL de respuesta de ePayco): doble confirmación ePayco + Comfasucre.
+      { path: 'pago/confirmacion', loadComponent: () => import('./pages/public/payment-confirmation/payment-confirmation.page').then((m) => m.PaymentConfirmationPage) },
+      { path: 'pago/confirmacion/:id', loadComponent: () => import('./pages/public/payment-confirmation/payment-confirmation.page').then((m) => m.PaymentConfirmationPage) },
+      // Rutas anteriores: siguen funcionando con la misma página.
+      { path: 'reserva', loadComponent: () => import('./pages/public/payment-confirmation/payment-confirmation.page').then((m) => m.PaymentConfirmationPage) },
+      { path: 'reserva/:id', loadComponent: () => import('./pages/public/payment-confirmation/payment-confirmation.page').then((m) => m.PaymentConfirmationPage) },
     ],
   },
   {
@@ -30,6 +34,7 @@ export const routes: Routes = [
     children: [
       { path: '', loadComponent: () => import('./pages/dashboard/dashboard.page').then((m) => m.DashboardPage) },
       { path: 'reservations', loadComponent: () => import('./pages/reservations/reservations.page').then((m) => m.ReservationsPage) },
+      { path: 'reservations/new', loadComponent: () => import('./pages/reservations/reservation-form.page').then((m) => m.ReservationFormPage) },
       { path: 'payments', loadComponent: () => import('./pages/payments/payments.page').then((m) => m.PaymentsPage) },
       { path: 'courts', loadComponent: () => import('./pages/courts/courts-list.page').then((m) => m.CourtsListPage) },
       { path: 'courts/new', loadComponent: () => import('./pages/courts/court-form.page').then((m) => m.CourtFormPage) },

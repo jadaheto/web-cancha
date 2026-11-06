@@ -49,7 +49,7 @@ import { PageHeaderComponent } from '../../ui/molecules/page-header.component';
               </td>
               <td>{{ p.courtName }}</td>
               <td>{{ p.startTime | date:'short' }}</td>
-              <td>{{ p.paymentMethod || '—' }}</td>
+              <td>{{ p.paymentMethod === 'caja' ? 'Caja' : p.paymentMethod === 'epayco' ? 'ePayco' : (p.paymentMethod || '—') }}</td>
               <td><code class="ref">{{ p.paymentReference || '—' }}</code></td>
               <td>{{ p.paidAt ? (p.paidAt | date:'short') : '—' }}</td>
               <td class="right">{{ p.totalAmount | currency:'COP':'symbol-narrow':'1.0-0' }}</td>

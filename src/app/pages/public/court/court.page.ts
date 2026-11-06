@@ -288,7 +288,7 @@ export class CourtPage implements OnInit {
         if (!r.totalAmount || r.totalAmount <= 0) {
           this.busy.set(false);
           this.modal.set('closed');
-          void this.router.navigate(['/reserva', r.id]);
+          void this.router.navigate(['/pago/confirmacion', r.id]);
           return;
         }
         this.modal.set('paying');

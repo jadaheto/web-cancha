@@ -30,6 +30,14 @@ export interface CreateReservationPayload extends QuotePayload {
   phoneToken?: string;
 }
 
+export type AdminPaymentMethod = 'caja' | 'epayco';
+
+export interface AdminReservationPayload extends CreateReservationPayload {
+  paymentMethod: AdminPaymentMethod;
+  /** N.º de recibo de caja (opcional). */
+  cashReference?: string;
+}
+
 @Injectable({ providedIn: 'root' })
 export class ReservationsService {
   private readonly base = `${environment.apiUrl}/reservations`;
@@ -52,8 +60,17 @@ export class ReservationsService {
   quote(payload: QuotePayload): Observable<PriceQuote> {
     return this.http.post<PriceQuote>(`${this.base}/quote`, payload);
   }
-  create(payload: CreateReservationPayload): Observable<Reservation> {
-    return this.http.post<Reservation>(this.base, payload);
+  /** Reserva desde el panel: pagada en caja o con link de ePayco (devuelve checkoutUrl). */
+  create(payload: AdminReservationPayload): Observable<Reservation & { checkoutUrl: string | null; paymentError?: string | null }> {
+    return this.http.post<Reservation & { checkoutUrl: string | null; paymentError?: string | null }>(this.base, payload);
+  }
+  /** Registra el pago recibido en caja. */
+  cashPayment(id: string, reference?: string): Observable<Reservation> {
+    return this.http.post<Reservation>(`${this.base}/${id}/cash-payment`, reference ? { reference } : {});
+  }
+  /** Consulta el pago en la pasarela y lo aplica si corresponde. */
+  verifyPayment(id: string): Observable<Reservation> {
+    return this.http.post<Reservation>(`${this.base}/${id}/verify-payment`, {});
   }
   updateStatus(id: string, status: ReservationStatus): Observable<Reservation> {
     return this.http.patch<Reservation>(`${this.base}/${id}/status`, { status });

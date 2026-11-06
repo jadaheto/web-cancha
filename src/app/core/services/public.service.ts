@@ -3,7 +3,7 @@ import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { HttpParams } from '@angular/common/http';
-import { Availability, Brand, Court, PriceQuote, Reservation } from '../models';
+import { Availability, Brand, Court, PaymentConfirmation, PriceQuote, Reservation } from '../models';
 import { CreateReservationPayload, QuotePayload } from './reservations.service';
 
 /** Endpoints públicos (sin autenticación) para el portal. */
@@ -29,6 +29,10 @@ export class PublicService {
   /** Pide al backend consultar el pago en ePayco con el ref_payco del retorno. */
   verifyPayment(id: string, refPayco?: string): Observable<Reservation> {
     return this.http.post<Reservation>(`${this.base}/reservations/${id}/verify-payment`, refPayco ? { refPayco } : {});
+  }
+  /** Doble confirmación: resultado de ePayco + estado de la reserva en Comfasucre. */
+  paymentConfirmation(id: string, refPayco?: string): Observable<PaymentConfirmation> {
+    return this.http.post<PaymentConfirmation>(`${this.base}/reservations/${id}/payment-confirmation`, refPayco ? { refPayco } : {});
   }
   reservation(id: string): Observable<Reservation> {
     return this.http.get<Reservation>(`${this.base}/reservations/${id}`);
