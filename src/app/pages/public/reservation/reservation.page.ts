@@ -93,6 +93,8 @@ export class ReservationPage implements OnInit {
   /** :id de la ruta o ?invoice= que agrega ePayco a la URL de respuesta. */
   readonly id = input<string>();
   readonly invoice = input<string>();
+  /** Referencia de la transacción que ePayco agrega a la URL de respuesta. */
+  readonly ref_payco = input<string>();
 
   readonly reservation = signal<Reservation | null>(null);
   readonly loading = signal(true);
@@ -124,7 +126,13 @@ export class ReservationPage implements OnInit {
   private fetch(): void {
     const id = this.id() || this.invoice();
     if (!id) { this.loading.set(false); this.notFound.set(true); return; }
-    this.api.reservation(id).subscribe({
+    // Mientras no esté pagada, el backend consulta el pago en la pasarela (con el
+    // ref_payco que agrega ePayco al volver, si llega) y confirma si corresponde.
+    const ref = (this.ref_payco() ?? '').trim();
+    const current = this.reservation();
+    const shouldVerify = !current || current.paymentStatus !== 'paid';
+    const request = shouldVerify ? this.api.verifyPayment(id, ref) : this.api.reservation(id);
+    request.subscribe({
       next: (r) => {
         this.reservation.set(r);
         this.loading.set(false);

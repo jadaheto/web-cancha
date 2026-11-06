@@ -26,6 +26,10 @@ export class PublicService {
     const params = new HttpParams().set('date', date);
     return this.http.get<Availability>(`${this.base}/courts/${id}/availability`, { params });
   }
+  /** Pide al backend consultar el pago en ePayco con el ref_payco del retorno. */
+  verifyPayment(id: string, refPayco?: string): Observable<Reservation> {
+    return this.http.post<Reservation>(`${this.base}/reservations/${id}/verify-payment`, refPayco ? { refPayco } : {});
+  }
   reservation(id: string): Observable<Reservation> {
     return this.http.get<Reservation>(`${this.base}/reservations/${id}`);
   }
