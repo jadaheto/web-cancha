@@ -60,6 +60,7 @@ export interface Court {
   images: string[];
   attributes: string[];
   venueServices: string[];
+  map?: { lat: number | null; lng: number | null; address: string | null } | null;
   hourlyRate: number;
   rates: RateMatrix;
   createdAt?: string;
@@ -105,6 +106,35 @@ export interface Reservation {
   verifiedAt?: string | null;
   paidAt?: string | null;
   createdAt?: string;
+}
+
+export interface AvailabilitySlot {
+  start: string;   // HH:mm
+  end: string;     // HH:mm
+  available: boolean;
+  reason: 'reserved' | 'past' | null;
+  slotLabel: string;
+}
+
+export interface Availability {
+  courtId: string;
+  date: string;
+  slots: AvailabilitySlot[];
+}
+
+/** Sede agrupada a partir de las canchas (venueName). */
+export interface Venue {
+  slug: string;
+  name: string;
+  address: string | null;
+  location: string | null;
+  image: string | null;
+  lat: number | null;
+  lng: number | null;
+  sports: string[];
+  services: string[];
+  courts: Court[];
+  minRate: number;
 }
 
 export interface PriceQuote {

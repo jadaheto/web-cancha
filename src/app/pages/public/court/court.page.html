@@ -1,0 +1,244 @@
+<cs-spinner *ngIf="loading()"></cs-spinner>
+
+<div class="container-app section" *ngIf="notFound()">
+  <div class="empty">
+    <i class="bi bi-calendar-x"></i>
+    <h2>Zona no encontrada</h2>
+    <p>No hay información de la cancha indicada.</p>
+    <a routerLink="/" class="cs-btn cs-btn-primary">Volver al inicio</a>
+  </div>
+</div>
+
+<ng-container *ngIf="court() as c">
+  <div class="container-app crumbs">
+    <a routerLink="/">Inicio</a><i class="bi bi-chevron-right"></i>
+    <a [routerLink]="['/sede', venueSlug()]">{{ c.venueName || 'Comfasucre' }}</a><i class="bi bi-chevron-right"></i>
+    <span>{{ c.name }}</span>
+  </div>
+
+  <div class="container-app layout">
+    <!-- Columna izquierda: información de la zona -->
+    <section class="info">
+      <div class="gallery">
+        <div class="main" [style.background-image]="c.images.length ? 'url(' + (c.images[photo()] | mediaUrl) + ')' : null">
+          <i *ngIf="!c.images.length" class="bi bi-dribbble"></i>
+          <span class="sport">{{ c.sportType }}</span>
+        </div>
+        <div class="thumbs" *ngIf="c.images.length > 1">
+          <button type="button" *ngFor="let img of c.images; let i = index" [class.on]="i === photo()"
+                  [style.background-image]="'url(' + (img | mediaUrl) + ')'" (click)="photo.set(i)" [attr.aria-label]="'Foto ' + (i + 1)"></button>
+        </div>
+      </div>
+
+      <h1>{{ c.name }}</h1>
+      <p class="sub">
+        <a [routerLink]="['/sede', venueSlug()]"><i class="bi bi-building"></i> {{ c.venueName || 'Comfasucre' }}</a>
+        <span *ngIf="c.address || c.location"><i class="bi bi-geo-alt"></i> {{ c.address || c.location }}</span>
+      </p>
+      <div class="from" *ngIf="fromRate() > 0">
+        <span>Desde <strong>{{ fromRate() | currency:'COP':'symbol-narrow':'1.0-0' }}</strong>/hora</span>
+        <small>Valor aproximado. El precio final depende de tu categoría y se calcula con tu documento al reservar.</small>
+      </div>
+      <p class="desc" *ngIf="c.description">{{ c.description }}</p>
+
+      <div class="facts">
+        <div><small>Deporte</small><strong>{{ c.sportType }}</strong></div>
+        <div *ngIf="c.courtType"><small>Tipo de cancha</small><strong>{{ c.courtType }}</strong></div>
+      </div>
+
+      <div class="block" *ngIf="c.attributes.length">
+        <h3>Atributos de la zona</h3>
+        <div class="tags"><span *ngFor="let a of c.attributes"><i class="bi bi-check2"></i> {{ a }}</span></div>
+      </div>
+
+      <div class="block" *ngIf="c.venueServices.length">
+        <h3>Servicios de la sede</h3>
+        <div class="tags"><span *ngFor="let s of c.venueServices"><i class="bi bi-check2-circle"></i> {{ s }}</span></div>
+      </div>
+
+      <div class="block" *ngIf="c.additionalInfo">
+        <h3>Información adicional</h3>
+        <p class="desc">{{ c.additionalInfo }}</p>
+      </div>
+
+      <div class="block">
+        <h3>Ubicación</h3>
+        <ng-container *ngIf="marker().length; else noMap">
+          <cs-map [markers]="marker()" [height]="280" [zoom]="16"></cs-map>
+          <p class="addr" *ngIf="c.map?.address || c.address"><i class="bi bi-geo-alt"></i> {{ c.map?.address || c.address }}</p>
+          <a class="cs-btn cs-btn-outline cs-btn-sm" target="_blank" rel="noopener"
+             [href]="'https://www.google.com/maps/dir/?api=1&destination=' + marker()[0].lat + ',' + marker()[0].lng">
+            <i class="bi bi-sign-turn-right"></i> Cómo llegar
+          </a>
+        </ng-container>
+        <ng-template #noMap>
+          <p class="desc text-muted"><i class="bi bi-geo"></i> {{ c.address || c.location || 'Ubicación aún no registrada en el mapa.' }}</p>
+        </ng-template>
+      </div>
+    </section>
+
+    <!-- Columna derecha: horarios y reserva -->
+    <section class="booking" id="horarios">
+      <h2>Consulta los horarios</h2>
+
+      <div class="days" role="listbox" aria-label="Día de la reserva">
+        <button type="button" *ngFor="let d of days" class="day" [class.on]="d.iso === date()" (click)="pickDate(d.iso)">
+          <small>{{ d.weekday }}</small><strong>{{ d.day }}</strong><small>{{ d.month }}</small>
+        </button>
+      </div>
+      <label class="other-day">
+        <i class="bi bi-calendar3"></i> Cambiar fecha
+        <input type="date" [min]="today" [value]="date()" (change)="pickDate($any($event.target).value)" />
+      </label>
+
+      <div class="legend">
+        <span><i class="dot free"></i> Disponible</span>
+        <span><i class="dot sel"></i> Seleccionado</span>
+        <span><i class="dot busy"></i> No disponible</span>
+      </div>
+
+      <cs-spinner *ngIf="loadingSlots()"></cs-spinner>
+      <div *ngIf="slotsError()" class="cs-alert cs-alert-danger">{{ slotsError() }}</div>
+
+      <ng-container *ngIf="!loadingSlots() && availability() as a">
+        <div class="slots" *ngIf="a.slots.length">
+          <button type="button" *ngFor="let s of a.slots; let i = index" class="slot"
+                  [class.sel]="isSelected(i)" [class.busy]="!s.available" [disabled]="!s.available"
+                  (click)="toggleSlot(i, s)">
+            <strong>{{ s.start }}</strong>
+            <small *ngIf="s.available">{{ s.slotLabel }}</small>
+            <small *ngIf="s.reason === 'reserved'">Reservado</small>
+            <small *ngIf="s.reason === 'past'">—</small>
+          </button>
+        </div>
+        <p class="hint" *ngIf="a.slots.length">Toca un horario y luego los contiguos para reservar varias horas.</p>
+        <div class="empty sm" *ngIf="!a.slots.length">
+          <i class="bi bi-clock-history"></i>
+          <p>No hay horarios disponibles para esta fecha. Intenta seleccionando otro día.</p>
+        </div>
+      </ng-container>
+
+      <!-- Resumen de la selección -->
+      <div class="pick" *ngIf="selection() as s">
+        <div>
+          <small>Estás reservando en este horario</small>
+          <strong>{{ date() + 'T12:00:00' | date:'EEE d MMM':'':'es-CO' }} · {{ s.start }} – {{ s.end }}</strong>
+          <small>{{ s.hours }} {{ s.hours === 1 ? 'hora' : 'horas' }}</small>
+        </div>
+        <div class="pick-total">
+          <small>El valor final se calcula con tu documento</small>
+          <cs-button icon="calendar-check" (clicked)="openSummary()">Reservar</cs-button>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- Modal: resumen de la reserva + datos del cliente -->
+  <div class="backdrop" *ngIf="modal() !== 'closed'" (click)="closeModal()">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="mtitle" (click)="$event.stopPropagation()">
+      <ng-container *ngIf="modal() === 'summary' && selection() as s">
+        <header>
+          <h2 id="mtitle">Resumen de tu reserva</h2>
+          <button type="button" class="x" (click)="closeModal()" aria-label="Cerrar"><i class="bi bi-x-lg"></i></button>
+        </header>
+
+        <div class="where">
+          <strong>{{ c.name }}</strong>
+          <span>{{ c.venueName || 'Comfasucre' }} · {{ date() + 'T12:00:00' | date:'EEEE d \'de\' MMMM':'':'es-CO' }}</span>
+          <span>{{ s.start }} – {{ s.end }}</span>
+        </div>
+
+        <form [formGroup]="form" (ngSubmit)="!quote() ? consultRate() : phoneToken() ? confirm() : null" class="data">
+          <h3>Tus datos</h3>
+          <label class="cs-label" for="f-doc">Número de documento <span class="req">*</span></label>
+          <input id="f-doc" class="cs-input" formControlName="documentNumber" inputmode="numeric" autocomplete="off" placeholder="Ej. 1102345678" maxlength="12" />
+          <small class="help" *ngIf="!invalid('documentNumber')">Con tu documento consultamos tu categoría (A, B, C o D) y la tarifa que te corresponde.</small>
+          <small class="err" *ngIf="invalid('documentNumber')">El documento es obligatorio. Ingresa solo números (5 a 12 dígitos).</small>
+
+          <label class="cs-label" for="f-name">Tu nombre y apellido <span class="req">*</span></label>
+          <input id="f-name" class="cs-input" formControlName="customerName" autocomplete="name" placeholder="Ej. María Pérez" />
+          <small class="err" *ngIf="invalid('customerName')">Debe contener nombre y apellido.</small>
+
+          <div class="row2">
+            <div>
+              <label class="cs-label" for="f-phone">Tu número celular <span class="req">*</span></label>
+              <input id="f-phone" class="cs-input" formControlName="customerPhone" inputmode="numeric" autocomplete="tel" placeholder="3001234567" maxlength="10" />
+              <small class="err" *ngIf="invalid('customerPhone')">Ingresa un celular de 10 dígitos.</small>
+            </div>
+            <div>
+              <label class="cs-label" for="f-email">Tu email (opcional)</label>
+              <input id="f-email" class="cs-input" formControlName="customerEmail" type="email" autocomplete="email" placeholder="correo@ejemplo.com" />
+              <small class="err" *ngIf="invalid('customerEmail')">Debe ingresar un correo válido.</small>
+            </div>
+          </div>
+
+          <!-- Paso 1: consultar la categoría y el valor final -->
+          <ng-container *ngIf="!quote()">
+            <div *ngIf="error()" class="cs-alert cs-alert-danger mt-1">{{ error() }}</div>
+            <cs-button class="mt-1" type="submit" [block]="true" size="lg" [loading]="quoting()" icon="search">
+              Consultar mi tarifa
+            </cs-button>
+          </ng-container>
+
+          <!-- Paso 2: precio final por categoría y confirmación -->
+          <ng-container *ngIf="quote() as q">
+            <div class="cat"><i class="bi bi-person-badge"></i> Tu categoría: <strong>{{ q.category }}</strong></div>
+            <table class="concepts">
+              <thead><tr><th>Concepto</th><th>Cantidad</th><th>Valor</th></tr></thead>
+              <tbody>
+                <tr>
+                  <td>Reserva {{ c.sportType }}<small> · Franja {{ q.slotLabel }}</small></td>
+                  <td>{{ q.hours }} h</td>
+                  <td>{{ q.total | currency:'COP':'symbol-narrow':'1.0-0' }}</td>
+                </tr>
+              </tbody>
+              <tfoot>
+                <tr><td colspan="2">Valor por hora (categoría {{ q.category }})</td><td>{{ q.ratePerHour | currency:'COP':'symbol-narrow':'1.0-0' }}</td></tr>
+                <tr class="grand"><td colspan="2">Total a pagar</td><td>{{ q.total | currency:'COP':'symbol-narrow':'1.0-0' }}</td></tr>
+              </tfoot>
+            </table>
+
+            <!-- Paso 3: verificar que el celular es real -->
+            <div class="otp" *ngIf="!phoneToken()">
+              <h3><i class="bi bi-shield-check"></i> Verifica tu celular</h3>
+              <ng-container *ngIf="!codeSentTo()">
+                <p>Te enviaremos un código por WhatsApp al <strong>{{ form.controls.customerPhone.value }}</strong> para confirmar que eres tú.</p>
+                <cs-button variant="outline" [block]="true" icon="whatsapp" [loading]="sendingCode()" (clicked)="sendCode()">Enviarme el código</cs-button>
+              </ng-container>
+              <ng-container *ngIf="codeSentTo() as to">
+                <p>Hemos enviado un código de verificación al <strong>{{ to }}</strong>. Escríbelo aquí:</p>
+                <div class="otp-row">
+                  <input class="cs-input code" [formControl]="codeCtrl" inputmode="numeric" autocomplete="one-time-code"
+                         maxlength="8" placeholder="N° código" aria-label="Código de verificación" (keydown.enter)="$event.preventDefault(); verifyCode()" />
+                  <cs-button [loading]="verifyingCode()" (clicked)="verifyCode()">Validar</cs-button>
+                </div>
+                <button type="button" class="resend" [disabled]="resendIn() > 0 || sendingCode()" (click)="sendCode()">
+                  {{ resendIn() > 0 ? 'Reenviar código en ' + resendIn() + ' s' : 'Reenviar código' }}
+                </button>
+              </ng-container>
+              <div *ngIf="codeError()" class="cs-alert cs-alert-danger mt-1">{{ codeError() }}</div>
+            </div>
+            <div class="otp ok" *ngIf="phoneToken()"><i class="bi bi-patch-check-fill"></i> Celular verificado</div>
+
+            <p class="note"><i class="bi bi-whatsapp"></i> Te enviaremos la confirmación de tu reserva por WhatsApp. De ser necesario, el centro deportivo se comunicará contigo.</p>
+            <div *ngIf="error()" class="cs-alert cs-alert-danger">{{ error() }}</div>
+
+            <cs-button *ngIf="phoneToken()" type="submit" [block]="true" size="lg" [loading]="busy()" icon="shield-lock">
+              {{ q.total > 0 ? 'Confirmar y pagar ' : 'Confirmar reserva' }}
+              <ng-container *ngIf="q.total > 0">{{ q.total | currency:'COP':'symbol-narrow':'1.0-0' }}</ng-container>
+            </cs-button>
+            <p class="secure" *ngIf="q.total > 0"><i class="bi bi-lock"></i> Pago seguro con ePayco (PSE, tarjetas y más)</p>
+          </ng-container>
+        </form>
+      </ng-container>
+
+      <div class="paying" *ngIf="modal() === 'paying'">
+        <cs-spinner *ngIf="!error()"></cs-spinner>
+        <h2>Redirigiendo al pago…</h2>
+        <p class="text-muted">Te llevamos a la pasarela segura de ePayco para completar el pago de tu reserva.</p>
+        <div *ngIf="error()" class="cs-alert cs-alert-danger">{{ error() }}</div>
+        <cs-button variant="outline" icon="box-arrow-up-right" (clicked)="goToCheckout()" *ngIf="!error()">Ir a pagar ahora</cs-button>
+      </div>
+    </div>
+  </div>
+</ng-container>

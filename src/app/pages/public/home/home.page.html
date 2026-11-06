@@ -1,0 +1,104 @@
+<!-- Hero con buscador -->
+<section class="hero">
+  <div class="container-app hero-inner">
+    <span class="eyebrow">{{ store.brand()?.name || 'Comfasucre' }} · Reservas deportivas</span>
+    <h1>¡Tu cancha ideal,<br />a un clic!</h1>
+    <p class="lead">Encuentra el espacio perfecto para tu deporte favorito y resérvalo en segundos.</p>
+
+    <form class="finder" (ngSubmit)="search()">
+      <label class="field">
+        <i class="bi bi-building"></i>
+        <select name="venue" [ngModel]="venueFilter()" (ngModelChange)="venueFilter.set($event)">
+          <option value="">Todas las sedes</option>
+          <option *ngFor="let v of store.venues()" [value]="v.slug">{{ v.name }}</option>
+        </select>
+      </label>
+      <label class="field">
+        <i class="bi bi-dribbble"></i>
+        <select name="sport" [ngModel]="sportFilter()" (ngModelChange)="sportFilter.set($event)">
+          <option value="">Todos los deportes</option>
+          <option *ngFor="let s of store.sports()" [value]="s">{{ s }}</option>
+        </select>
+      </label>
+      <button type="submit" class="cs-btn cs-btn-primary"><i class="bi bi-search"></i> Buscar</button>
+    </form>
+  </div>
+</section>
+
+<cs-spinner *ngIf="store.loading()"></cs-spinner>
+
+<div *ngIf="store.error()" class="container-app mt-3">
+  <div class="cs-alert cs-alert-danger">No pudimos comunicarnos con el servidor. Intenta de nuevo en unos minutos.</div>
+</div>
+
+<ng-container *ngIf="!store.loading() && !store.error()">
+  <!-- Sedes -->
+  <section id="sedes" class="container-app section">
+    <div class="head">
+      <h2>Sedes del centro deportivo</h2>
+      <span class="text-muted">{{ store.venues().length }} {{ store.venues().length === 1 ? 'sede' : 'sedes' }}</span>
+    </div>
+
+    <div class="venues">
+      <a class="venue" *ngFor="let v of store.venues()" [routerLink]="['/sede', v.slug]">
+        <div class="venue-img" [style.background-image]="v.image ? 'url(' + (v.image | mediaUrl) + ')' : null">
+          <i *ngIf="!v.image" class="bi bi-building"></i>
+        </div>
+        <div class="venue-body">
+          <h3>{{ v.name }}</h3>
+          <p class="meta" *ngIf="v.address || v.location"><i class="bi bi-geo-alt"></i> {{ v.address || v.location }}</p>
+          <div class="chips">
+            <span class="chip" *ngFor="let s of v.sports">{{ s }}</span>
+          </div>
+          <div class="venue-foot">
+            <span class="meta">{{ v.courts.length }} {{ v.courts.length === 1 ? 'zona' : 'zonas' }}</span>
+            <span class="meta" *ngIf="v.minRate > 0">Desde <strong>{{ v.minRate | currency:'COP':'symbol-narrow':'1.0-0' }}</strong>/h</span>
+          </div>
+        </div>
+      </a>
+    </div>
+  </section>
+
+  <!-- Mapa de sedes -->
+  <section class="container-app section" *ngIf="store.venueMarkers().length">
+    <div class="head">
+      <h2>Ubicación de las sedes</h2>
+      <span class="text-muted">Toca un pin para ver la sede o cómo llegar</span>
+    </div>
+    <cs-map [markers]="store.venueMarkers()" [height]="380"></cs-map>
+  </section>
+
+  <!-- Zonas -->
+  <section id="zonas" class="container-app section">
+    <div class="head">
+      <h2>Zonas disponibles para tu reserva</h2>
+      <button *ngIf="venueFilter() || sportFilter()" type="button" class="cs-btn cs-btn-ghost cs-btn-sm" (click)="clear()">
+        <i class="bi bi-x-circle"></i> Quitar filtros
+      </button>
+    </div>
+
+    <div class="sport-tabs" role="tablist" *ngIf="store.sports().length > 1">
+      <button type="button" [class.on]="!sportFilter()" (click)="sportFilter.set('')">Todas las zonas</button>
+      <button type="button" *ngFor="let s of store.sports()" [class.on]="sportFilter() === s" (click)="sportFilter.set(s)">{{ s }}</button>
+    </div>
+
+    <div class="courts" *ngIf="filteredCourts().length">
+      <cs-court-card *ngFor="let c of filteredCourts()" [court]="c"></cs-court-card>
+    </div>
+
+    <div class="empty" *ngIf="!filteredCourts().length">
+      <i class="bi bi-calendar-x"></i>
+      <p>No hay zonas disponibles con los filtros seleccionados.</p>
+    </div>
+  </section>
+
+  <!-- Cómo funciona -->
+  <section class="container-app section">
+    <div class="steps">
+      <div class="step"><i class="bi bi-search"></i><h4>1. Elige</h4><p>Busca la sede y la zona para tu deporte.</p></div>
+      <div class="step"><i class="bi bi-clock"></i><h4>2. Consulta horarios</h4><p>Mira la disponibilidad y el valor por hora.</p></div>
+      <div class="step"><i class="bi bi-credit-card"></i><h4>3. Paga en línea</h4><p>Confirma tu reserva con pago seguro ePayco.</p></div>
+      <div class="step"><i class="bi bi-whatsapp"></i><h4>4. Recibe tu confirmación</h4><p>Te llega el detalle por WhatsApp.</p></div>
+    </div>
+  </section>
+</ng-container>

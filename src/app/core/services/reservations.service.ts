@@ -26,6 +26,8 @@ export interface CreateReservationPayload extends QuotePayload {
   isAffiliate?: boolean;
   userId?: string;
   notes?: string;
+  /** Token de verificación del celular (portal público). */
+  phoneToken?: string;
 }
 
 @Injectable({ providedIn: 'root' })
