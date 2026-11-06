@@ -4,6 +4,9 @@ import { Observable, tap } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { Brand } from '../models';
 
+/** Horario de atención del portal (horas enteras, Bogotá). */
+export interface Schedule { openHour: number; closeHour: number; isDefault: boolean; }
+
 const DEFAULT_BRAND: Brand = {
   name: 'Comfasucre',
   tagline: 'Tu mejor opción en deportes',
@@ -35,6 +38,18 @@ export class SettingsService {
 
   updateBrand(payload: Partial<Brand>): Observable<Brand> {
     return this.http.put<Brand>(`${this.base}/brand`, payload).pipe(tap((b) => this.applyBrand(b)));
+  }
+
+  getSchedule(): Observable<Schedule> {
+    return this.http.get<Schedule>(`${this.base}/schedule`);
+  }
+
+  updateSchedule(payload: { openHour: number; closeHour: number }): Observable<Schedule> {
+    return this.http.put<Schedule>(`${this.base}/schedule`, payload);
+  }
+
+  resetSchedule(): Observable<Schedule> {
+    return this.http.delete<Schedule>(`${this.base}/schedule`);
   }
 
   /** Aplica los colores de marca a las variables CSS :root. */

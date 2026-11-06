@@ -2,7 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { Brand } from '../../core/models';
-import { SettingsService } from '../../core/services/settings.service';
+import { Schedule, SettingsService } from '../../core/services/settings.service';
 import { ButtonComponent } from '../../ui/atoms/button.component';
 import { SpinnerComponent } from '../../ui/atoms/spinner.component';
 import { PageHeaderComponent } from '../../ui/molecules/page-header.component';
@@ -12,7 +12,7 @@ import { PageHeaderComponent } from '../../ui/molecules/page-header.component';
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule, ButtonComponent, SpinnerComponent, PageHeaderComponent],
   template: `
-    <cs-page-header title="Configuración de marca" subtitle="Personaliza la identidad del portal"></cs-page-header>
+    <cs-page-header title="Configuración" subtitle="Identidad del portal y horario de atención"></cs-page-header>
 
     <cs-spinner *ngIf="loading()"></cs-spinner>
 
@@ -56,10 +56,45 @@ import { PageHeaderComponent } from '../../ui/molecules/page-header.component';
         <cs-button type="submit" [loading]="saving()" icon="check-lg">Guardar cambios</cs-button>
       </div>
     </form>
+
+    <!-- Horario de atención del portal -->
+    <form *ngIf="!loading()" [formGroup]="scheduleForm" (ngSubmit)="saveSchedule()" class="cs-card schedule mt-3">
+      <h3><i class="bi bi-clock"></i> Horario de atención</h3>
+      <p class="text-muted">
+        Define desde qué hora y hasta qué hora se puede reservar en el portal (bloques de 1 hora).
+        <span *ngIf="scheduleDefault()" class="cs-badge cs-badge-gray">Valor por defecto</span>
+      </p>
+      <div class="grid grid-2">
+        <div>
+          <label class="cs-label" for="s-open">Apertura</label>
+          <select id="s-open" class="cs-select" formControlName="openHour">
+            <option *ngFor="let h of openHours" [ngValue]="h">{{ label(h) }}</option>
+          </select>
+        </div>
+        <div>
+          <label class="cs-label" for="s-close">Cierre</label>
+          <select id="s-close" class="cs-select" formControlName="closeHour">
+            <option *ngFor="let h of closeHours" [ngValue]="h" [disabled]="h <= scheduleForm.controls.openHour.value">{{ label(h) }}</option>
+          </select>
+        </div>
+      </div>
+      <p class="hint">
+        Último turno: {{ label(scheduleForm.controls.closeHour.value - 1) }} – {{ label(scheduleForm.controls.closeHour.value) }} ·
+        {{ scheduleForm.controls.closeHour.value - scheduleForm.controls.openHour.value }} turnos por día por cancha.
+      </p>
+      <div *ngIf="scheduleSaved()" class="cs-alert cs-alert-success">Horario guardado. El portal ya muestra los nuevos turnos.</div>
+      <div *ngIf="scheduleError()" class="cs-alert cs-alert-danger">{{ scheduleError() }}</div>
+      <div class="flex gap-1">
+        <cs-button type="submit" [loading]="savingSchedule()" [disabled]="scheduleForm.controls.openHour.value >= scheduleForm.controls.closeHour.value" icon="check-lg">Guardar horario</cs-button>
+        <cs-button *ngIf="!scheduleDefault()" variant="outline" icon="arrow-counterclockwise" (clicked)="resetSchedule()">Restablecer (6:00 – 23:00)</cs-button>
+      </div>
+    </form>
   `,
   styles: [`
     h3 { margin-top: 0; }
     .color { height: 44px; padding: .25rem; }
+    .schedule h3 i { color: var(--cs-sky); }
+    .schedule .hint { font-size: .85rem; color: var(--cs-gray-600); margin: .8rem 0; }
     .actions { grid-column: 1 / -1; display: flex; flex-direction: column; gap: .5rem; align-items: flex-start; }
   `],
 })
@@ -77,7 +112,49 @@ export class SettingsPage implements OnInit {
     email: [''], whatsapp: [''], address: [''], facebook: [''], instagram: [''],
   });
 
+  readonly openHours = Array.from({ length: 24 }, (_, i) => i);
+  readonly closeHours = Array.from({ length: 24 }, (_, i) => i + 1);
+  readonly scheduleForm = this.fb.nonNullable.group({ openHour: [6], closeHour: [23] });
+  readonly scheduleDefault = signal(true);
+  readonly savingSchedule = signal(false);
+  readonly scheduleSaved = signal(false);
+  readonly scheduleError = signal<string | null>(null);
+
+  label(h: number): string {
+    return `${String(h).padStart(2, '0')}:00`;
+  }
+
+  saveSchedule(): void {
+    this.savingSchedule.set(true);
+    this.scheduleSaved.set(false);
+    this.scheduleError.set(null);
+    this.service.updateSchedule(this.scheduleForm.getRawValue()).subscribe({
+      next: (s) => this.afterSchedule(s),
+      error: (err) => { this.savingSchedule.set(false); this.scheduleError.set(err?.error?.message ?? 'No se pudo guardar el horario'); },
+    });
+  }
+
+  resetSchedule(): void {
+    this.savingSchedule.set(true);
+    this.scheduleError.set(null);
+    this.service.resetSchedule().subscribe({
+      next: (s) => this.afterSchedule(s),
+      error: (err) => { this.savingSchedule.set(false); this.scheduleError.set(err?.error?.message ?? 'No se pudo restablecer'); },
+    });
+  }
+
+  private afterSchedule(s: Schedule): void {
+    this.savingSchedule.set(false);
+    this.scheduleSaved.set(true);
+    this.scheduleDefault.set(s.isDefault);
+    this.scheduleForm.setValue({ openHour: s.openHour, closeHour: s.closeHour });
+  }
+
   ngOnInit(): void {
+    this.service.getSchedule().subscribe({
+      next: (s) => { this.scheduleDefault.set(s.isDefault); this.scheduleForm.setValue({ openHour: s.openHour, closeHour: s.closeHour }); },
+      error: () => undefined,
+    });
     this.service.getBrand().subscribe({
       next: (b) => { this.form.patchValue(b); this.loading.set(false); },
       error: () => this.loading.set(false),
